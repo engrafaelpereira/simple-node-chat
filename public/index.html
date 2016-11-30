@@ -1,5 +1,7 @@
-<html>
+ <!DOCTYPE html>
+ <html>
 	<head>
+		<meta charset="UTF-8">
 		<script
 			  src="https://code.jquery.com/jquery-3.1.1.min.js"
 			  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
@@ -8,12 +10,14 @@
 	</head>
 	<body>
 		<form id="chat_form">
-			<div class="sidebar" style="float: left; width: 10%;" >
-				<fieldset id="chatters">
+			<div class="sidebar" style="float: left; width: 160px;" >
+				<fieldset>
 					<legend>Chatters</legend>
+					<ul id="chatters">
+					</ul>
 				</fieldset>
 			</div>
-			<div class="content" style="float: left; width: 30%;">
+			<div class="content" style="float: left; width: 320px;">
 				<fieldset style="width: 288px;">
 					 <legend>Status:</legend>
 					<label id="status"></label>
@@ -34,6 +38,7 @@
 			var nickname;
 
 			server.on('connect', function(data) {
+				console.log('connect');
 				$('#status').html('Online');
 				$('#chat_input').prop( "disabled", false );
 				$('#chat_send_button').prop( "disabled", false );
@@ -44,21 +49,26 @@
 			});
 
 			server.on('disconnect', function(data) {
+				console.log('disconnect');
 				$('#status').html('Offline');
 				$('#chat_input').prop( "disabled", true );
 				$('#chat_send_button').prop( "disabled", true );
+				$('#chatters li').remove();
 			});
 
-			server.io('newChatter', function(name) {
-				var chatter = $('<li>' + name + '</p>').data('name', name);
+			server.on('newChatter', function(name) {
+				console.log('newChatter');
+				var chatter = $('<li>' + name + '</p>');
 				chatter.appendTo('#chatters');
 			});
 
-			server.io('removeChatter', function(name){
-				$('#chatters li[data-name=' + name + ']').remove();
+			server.on('removeChatter', function(name){
+				console.log('removeChatter');
+				$("#chatters li:contains('" + name + "')").remove();
 			});
 			
 			$('#chat_form').submit(function(e) {
+				console.log('submit');
 				var message = $('#chat_input').val();
 				server.emit('messages', message);
 				$('#chat_input').val("")
