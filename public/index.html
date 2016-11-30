@@ -1,0 +1,73 @@
+<html>
+	<head>
+		<script
+			  src="https://code.jquery.com/jquery-3.1.1.min.js"
+			  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+			  crossorigin="anonymous"></script>
+		<script src="/socket.io/socket.io.js"></script>
+	</head>
+	<body>
+		<form id="chat_form">
+			<div class="sidebar" style="float: left; width: 10%;" >
+				<fieldset id="chatters">
+					<legend>Chatters</legend>
+				</fieldset>
+			</div>
+			<div class="content" style="float: left; width: 30%;">
+				<fieldset style="width: 288px;">
+					 <legend>Status:</legend>
+					<label id="status"></label>
+				</fieldset>
+				 <fieldset style="width: 288px;">
+				    <legend>Messages:</legend>
+					<div id="chat_output"></div>
+				 </fieldset>
+				<div>
+					<input id="chat_input" type="text" autocomplete="off" ></input>
+					<button id="chat_send_button" type="submit">send</button>
+				</div>
+			</div>
+		</form>
+
+		<script>
+			var server = io.connect('http://localhost:8080');
+			var nickname;
+
+			server.on('connect', function(data) {
+				$('#status').html('Online');
+				$('#chat_input').prop( "disabled", false );
+				$('#chat_send_button').prop( "disabled", false );
+				if (nickname === undefined) {
+					nickname = prompt("What's your nickname?");
+				}
+				server.emit('join', nickname);
+			});
+
+			server.on('disconnect', function(data) {
+				$('#status').html('Offline');
+				$('#chat_input').prop( "disabled", true );
+				$('#chat_send_button').prop( "disabled", true );
+			});
+
+			server.io('newChatter', function(name) {
+				var chatter = $('<li>' + name + '</p>').data('name', name);
+				chatter.appendTo('#chatters');
+			});
+
+			server.io('removeChatter', function(name){
+				$('#chatters li[data-name=' + name + ']').remove();
+			});
+			
+			$('#chat_form').submit(function(e) {
+				var message = $('#chat_input').val();
+				server.emit('messages', message);
+				$('#chat_input').val("")
+				return false;
+			});
+
+			server.on('messages', function (data) {
+				$( "<p>" + data + "</p>" ).appendTo("#chat_output");
+			});
+		</script>
+	</body>
+</html>
